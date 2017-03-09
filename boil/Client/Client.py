@@ -46,7 +46,7 @@ class Client:
     def send_payload(self, data):
         self.data = data
         msg = json.dumps(self.data)
-        print("JSON: ",msg)
+        #print("JSON: ",msg)
         self.connection.sendall(msg)
 
     def get_input(self):
