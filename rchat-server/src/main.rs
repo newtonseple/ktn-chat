@@ -12,7 +12,7 @@ use std::sync::mpsc::Receiver;
 use std::sync::mpsc::Sender;
 use std::sync::mpsc::Select;
 
-use rchat_common::{Request, Response};
+use rchat_common::{Request, Response, TcpTransceive};
 
 fn main() {
     println!("Hello, world!");
@@ -22,13 +22,14 @@ fn main() {
 
 struct ClientInfo {
     username: Option<String>,
-    response_tx: Sender<Response>, // TODO: datatype
-    request_rx: Receiver<Request>, // TODO: datatype
+    response_tx: Sender<Response>,
+    request_rx: Receiver<Request>,
 }
 
 struct ChatServer {
     message_log: Vec<String>,
     clients: Vec<ClientInfo>,
+    new_client: Option<ClientInfo>,
     stream_rx: Receiver<TcpStream>,
 
 }
@@ -38,10 +39,11 @@ impl ChatServer {
         let mut chat_server = ChatServer{
             message_log: Vec::new(),
             clients: Vec::new(),
+            new_client: None,
             stream_rx: ClientManager::get_stream_rx(),
         };
         loop {
-
+            // TODO: add new clients, and such
             // Set up select
             let sel = Select::new();
             let mut stream_rx_handle = sel.handle(&chat_server.stream_rx); //++ 
@@ -61,6 +63,14 @@ impl ChatServer {
             if ret == stream_rx_handle.id() {
                 let stream_result = stream_rx_handle.recv();
                 println!("Got stream");
+                match stream_result {
+                    Ok(stream) => {
+                        
+                    },
+                    Err(e) => {
+                        println!("Did not get stream. {}",e);
+                    },
+                }
             } else {
                 for (i, request_handle) in request_handles.iter_mut().enumerate(){
                     if ret == request_handle.id(){
@@ -125,4 +135,10 @@ impl ClientHandler {
             //send to concerned
         }
     }
+}
+
+struct ServerTcpTransceiver;
+impl TcpTransceive for ServerTcpTransceiver {
+    type SendType = Response;
+    type ReceiveType = Request;
 }
