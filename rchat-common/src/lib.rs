@@ -12,7 +12,7 @@ mod response;
 
 pub use request::{RequestType, Request};
 pub use response::Response;
-pub use connection::{Connection, Transceive};
+pub use connection::TcpTransceive;
 
 #[test]
 fn it_works() {

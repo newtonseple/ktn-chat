@@ -9,13 +9,10 @@ use serde::{Deserialize, Serialize};
 use std::io::{Read, Write};
 use std::marker::Send;
 
-
-pub struct Connection;
-
 /// Trait for nonblocking TCP connection.
-/// To implement this trait for ´Connection´
-/// spesify ´SendType´ and ´ReceiveType´ to get ´run´.
-pub trait Transceive {
+/// To implement this trait
+/// specify ´SendType´ and ´ReceiveType´ to get ´run´.
+pub trait TcpTransceive {
     type SendType: 'static + Serialize + Send;
     type ReceiveType: 'static + Deserialize + Send;
 
