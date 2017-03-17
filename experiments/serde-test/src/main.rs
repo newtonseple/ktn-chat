@@ -26,11 +26,15 @@ enum R {
     login,
     logout,
 }
+enum Content {
+    String(content),
+    
+}
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 struct m {
     request: R,
-    content: String,
+    content: Option<String>,
 }
 
 fn main() {
@@ -38,17 +42,20 @@ fn main() {
     let b = SomeEnum::Bar(42);
     let c = SomeEnum::Baz { a: 42, b: true };
     let d = SomeEnum::Boo { c: SomeStruct { a: 24, b: false } };
-    let e = m{request: R::login, content: "didrik".to_string()};
+    let e = m{request: R::login, content: None};
+    
     let aj = serde_json::to_string(&a).unwrap();
     let bj = serde_json::to_string(&b).unwrap();
     let cj = serde_json::to_string(&c).unwrap();
     let dj = serde_json::to_string(&d).unwrap();
     let ej = serde_json::to_string(&e).unwrap();
+
     let ad: Result<SomeEnum, _> = serde_json::from_str(&aj);
     let bd: Result<SomeEnum, _> = serde_json::from_str(&bj);
     let cd: Result<SomeEnum, _> = serde_json::from_str(&cj);
     let dd: Result<SomeEnum, _> = serde_json::from_str(&dj);
     let ed: Result<m, _> = serde_json::from_str(&ej);
+    
     println!("a: {:?}", a);
     println!("b: {:?}", b);
     println!("c: {:?}", c);
