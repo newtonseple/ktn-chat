@@ -16,20 +16,20 @@ pub struct Connection;
 /// To implement this trait for ´Connection´
 /// spesify ´SendType´ and ´ReceiveType´ to get ´run´.
 pub trait Transceive {
-    type SendType: Serialize;
-    type ReceiveType: Deserialize;
+    type SendType: 'static + Serialize + Send;
+    type ReceiveType: 'static + Deserialize + Send;
 
 
-    fn run(stream: TcpStream, recieve_tx: Sender<ReceiveType>, send_rx: Receiver<SendType>) {
-        let sender = TcpSender::new(stream.try_clone()?, send_rx);
-        let reciver = TcpReciever::new(stream.try_clone()?, recieve_tx);
+    fn run(stream: TcpStream, recieve_tx: Sender<Self::ReceiveType>, send_rx: Receiver<Self::SendType>) {
+        let sender = TcpSender::new(stream.try_clone().expect("Unable to clone TcpStream"), send_rx);
+        let reciver = TcpReciever::new(stream.try_clone().expect("Unable to clone TcpStream"), recieve_tx);
         
         thread::spawn(move || {
-            sender.run()?;
+            sender.run();
         });
 
         thread::spawn(move || {
-            reciver.run()?;
+            reciver.run();
         });
     }
 } 
@@ -47,12 +47,12 @@ impl<R> TcpReciever<R> where R: Deserialize {
         TcpReciever{stream, tx}
     }
 
-    pub fn run(self) -> ! {
+    pub fn run(mut self) -> ! {
         loop {
             let mut recieved = String::new();
-            self.stream.read_string(&mut recieved)?;
-            let recieved: R = serde_json::from_str(&recieved)?;
-            self.tx.send(recieved)?;
+            self.stream.read_to_string(&mut recieved).expect("Unable to read from Tcpstream");
+            let recieved: R = serde_json::from_str(&recieved).expect("Unable to deserialize");
+            self.tx.send(recieved).expect("Unable to send received object");
         }
     }
 }
@@ -68,11 +68,11 @@ impl<T> TcpSender<T> where T: Serialize {
          TcpSender{stream, rx}
      }
 
-     pub fn run(self) -> ! {
+     pub fn run(mut self) -> ! {
          loop {
-             let to_send = self.rx()?;
-             let to_send = serde_json::to_string(&to_send)?;
-             self.stream.write(to_send.as_bytes())?;
+             let to_send = self.rx.recv().expect("Unable to receive something to send");
+             let to_send = serde_json::to_string(&to_send).expect("Unable to serialize");
+             self.stream.write(to_send.as_bytes()).expect("Unable to send object");
          }
      }
 }
