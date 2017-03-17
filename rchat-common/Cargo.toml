@@ -1,0 +1,11 @@
+[package]
+name = "rchat-common"
+version = "0.1.0"
+authors = ["didrik <didrik.rokhaug@gmail.com>"]
+
+[dependencies]
+serde = "0.9"
+serde_derive = "0.9"
+
+# Used in tests
+serde_json = "0.9"
