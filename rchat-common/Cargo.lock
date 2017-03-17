@@ -1,5 +1,5 @@
 [root]
-name = "rchat-common"
+name = "rchat_common"
 version = "0.1.0"
 dependencies = [
  "serde 0.9.11 (registry+https://github.com/rust-lang/crates.io-index)",

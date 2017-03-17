@@ -1,5 +1,5 @@
 [package]
-name = "rchat-common"
+name = "rchat_common"
 version = "0.1.0"
 authors = ["didrik <didrik.rokhaug@gmail.com>"]
 
