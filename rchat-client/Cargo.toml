@@ -1,0 +1,6 @@
+[package]
+name = "rchat-client"
+version = "0.1.0"
+authors = ["Bernt Johan <newtonseple@gmail.com>"]
+
+[dependencies]
