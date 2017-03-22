@@ -22,7 +22,7 @@ fn main() {
     Connection::run(stream, tx2, rx1);
     let stdin = io::stdin();
     for line in stdin.lock().lines() {
-        tx1.send(Request{request: RequestType::msg, content: Some("Hei på deg".to_string())});
+        tx1.send(Request::msg{ content: Some("Hei på deg".to_string())});
         println!("\"Hei på deg\" sent");
     }
 }

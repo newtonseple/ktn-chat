@@ -18,5 +18,9 @@ impl ConsoleReader {
 struct ConsolePrinter;
 
 impl ConsolePrinter {
-    //fn run()
+    fn run(console_output_rx: Receiver<String>) {
+        loop {
+            println!("{}", console_output_rx.recv().expect("Unable to receive anything to print"));
+        }
+    }
 }
