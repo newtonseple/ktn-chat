@@ -117,11 +117,24 @@ impl ChatServer {
                     },
                     ChatServerAction::HandleRequest(request, i) => {
                         match request{
-                            Request::login(content) => {},
-                            Request::logout(content) => {},
-                            Request::msg(content) => {},
-                            Request::names(content) => {},
-                            Request::help(content) => {},
+                            Request::login{content: Some(username)} => {
+                                println!("Unimplemented: client {} tried to log in as {}",i,username);
+                            },
+                            Request::logout{content: _} => {
+                                println!("Unimplemented: client {} tried to logout",i);
+                            },
+                            Request::msg{content: Some(message)} => {
+                                println!("Unimplemented: client {} tried to msg {}",i,message);
+                            },
+                            Request::names{content: _} => {
+                                println!("Unimplemented: client {} tried to get names",i);
+                            },
+                            Request::help{content: _} => {
+                                println!("Unimplemented: client {} tried to get help",i);
+                            },
+                            _ => {
+                                println!("Unimplemented: I don't know what client {} tried",i);
+                            }
                         }
                     },
             }
@@ -147,7 +160,7 @@ impl ClientManager {
         .name("ClientManager".to_string())
         .spawn(move || {
             let client_manager = ClientManager{
-                tcp_listener: TcpListener::bind("0.0.0.0:7777").expect("Could not bind TcpListener"),
+                tcp_listener: TcpListener::bind("0.0.0.0:9999").expect("Could not bind TcpListener"),
                 new_stream_tx
             };
             for stream in client_manager.tcp_listener.incoming() {
