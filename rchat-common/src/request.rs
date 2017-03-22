@@ -1,4 +1,5 @@
 use std::fmt::{Display, Formatter, Result};
+use std::str::FromStr;
 
 #[allow(non_camel_case_types)]
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
@@ -9,6 +10,25 @@ pub enum Request {
     msg {content: Option<String>},
     names {content: Option<String>},
     help {content: Option<String>},
+}
+
+impl FromStr for Request {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result {
+        let words = s.split_whitespace();
+        let req = words.take(1);
+        let con: &str = words.collect();
+        match req {
+            "login" => Ok(Request::login{content: con}),
+            "logout" => Ok(Request::login{content: con}),
+            "msg" => Ok(Request::login{content: con}),
+            "names" => Ok(Request::login{content: con}),
+            "help" => Ok(Request::login{content: con}),
+            _ => Err(()),
+        }
+    }
+
 }
 
 /*

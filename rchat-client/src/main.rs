@@ -38,3 +38,9 @@ fn main() {
         thread::sleep(Duration::from_millis(500));
     }
 }
+
+enum ParseError;
+
+fn parse_input(input: String) -> Result<Request, ParseError> {
+
+}
