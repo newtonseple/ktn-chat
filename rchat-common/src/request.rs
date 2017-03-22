@@ -2,12 +2,13 @@ use std::fmt::{Display, Formatter, Result};
 
 #[allow(non_camel_case_types)]
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
-pub enum RequestType {
-    login,
-    logout,
-    msg,
-    names,
-    help,
+#[serde(tag = "request")]
+pub enum Request {
+    login {content: Option<String>},
+    logout {content: Option<String>},
+    msg {content: Option<String>},
+    names {content: Option<String>},
+    help {content: Option<String>},
 }
 
 /*
@@ -23,13 +24,13 @@ impl Display for RequestType {
     }
 }
 */
-
+/*
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Request {
     pub request: RequestType,
     pub content: Option<String>,
 }
-
+*/
 #[cfg(test)]mod test {
     extern crate serde_json;
 
