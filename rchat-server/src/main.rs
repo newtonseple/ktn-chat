@@ -26,12 +26,19 @@ struct ClientInfo {
     request_rx: Receiver<Request>,
 }
 
+enum ChatServerAction {
+    DoNothing,
+    AddClient(ClientInfo),
+    RemoveClient(usize),
+    HandleRequest(Request, usize), //request and who it's from
+}
+
 struct ChatServer {
+    //States
     message_log: Vec<String>,
     clients: Vec<ClientInfo>,
-    new_client: Option<ClientInfo>,
     stream_rx: Receiver<TcpStream>,
-
+    action: ChatServerAction,
 }
 
 impl ChatServer {
@@ -39,54 +46,86 @@ impl ChatServer {
         let mut chat_server = ChatServer{
             message_log: Vec::new(),
             clients: Vec::new(),
-            new_client: None,
             stream_rx: ClientManager::get_stream_rx(),
+            action: ChatServerAction::DoNothing,
         };
         loop {
-            // TODO: add new clients, and such
-            // Set up select
-            let sel = Select::new();
-            let mut stream_rx_handle = sel.handle(&chat_server.stream_rx); //++ 
-            let mut request_handles = Vec::new();
-            for client in chat_server.clients.iter() {
-                request_handles.push((sel.handle(&client.request_rx)));
-            }
-            unsafe {
-                stream_rx_handle.add(); //++
-                for request_handle in request_handles.iter_mut(){
-                    request_handle.add();
-                }
-            }
-            let ret = sel.wait();
+            { // Scope for select. Cannot change clients inside!
 
-            // Handle select result
-            if ret == stream_rx_handle.id() {
-                let stream_result = stream_rx_handle.recv();
-                println!("Got stream");
-                match stream_result {
-                    Ok(stream) => {
-                        
-                    },
-                    Err(e) => {
-                        println!("Did not get stream. {}",e);
-                    },
+                // Set up select
+                let sel = Select::new();
+                let mut stream_rx_handle = sel.handle(&chat_server.stream_rx); //++ 
+                let mut request_handles = Vec::new();
+                for client in chat_server.clients.iter() {
+                    request_handles.push((sel.handle(&client.request_rx)));
                 }
-            } else {
-                for (i, request_handle) in request_handles.iter_mut().enumerate(){
-                    if ret == request_handle.id(){
-                        println!("Got request from {}",i);
-                        let request_result = request_handle.recv();
-                        match request_result {
-                            Ok(request) => {
-                                println!("Request was: {}",i);
-                            },
-                            Err(e) => {
-                                println!("Request was not received. {}",e);
-                            },
+                unsafe {
+                    stream_rx_handle.add(); //++
+                    for request_handle in request_handles.iter_mut(){
+                        request_handle.add();
+                    }
+                }
+                let ret = sel.wait();
+
+                // Handle select result
+                if ret == stream_rx_handle.id() {
+                    let stream_result = stream_rx_handle.recv();
+                    println!("Got stream");
+                    match stream_result {
+                        Ok(stream) => {
+                            let (request_tx, request_rx) = channel(); 
+                            let (response_tx, response_rx) = channel();
+                            ServerTcpTransceiver::run(stream, request_tx, response_rx);
+                            chat_server.action = ChatServerAction::AddClient(ClientInfo{
+                                username: None,
+                                response_tx,
+                                request_rx,
+                            })
+                        },
+                        Err(e) => {
+                            println!("Did not get stream. {}",e);
+                        },
+                    }
+                } else {
+                    for (i, request_handle) in request_handles.iter_mut().enumerate(){
+                        if ret == request_handle.id(){
+                            println!("Got request from {}",i);
+                            let request_result = request_handle.recv();
+                            match request_result {
+                                Ok(request) => {
+                                    println!("Request from {:?} was: {:?}",i,request);
+                                    chat_server.action = ChatServerAction::HandleRequest(request, i);
+                                },
+                                Err(e) => {
+                                    println!("Request was not received. {:?}",e);
+                                    chat_server.action = ChatServerAction::RemoveClient(i);
+                                },
+                            }
                         }
                     }
                 }
             }
+            match chat_server.action{
+                    ChatServerAction::DoNothing => {
+                        unreachable!();
+                    },
+                    ChatServerAction::AddClient(client) => {
+                        chat_server.clients.push(client);
+                    },
+                    ChatServerAction::RemoveClient(i) => {
+                        chat_server.clients.swap_remove(i);
+                    },
+                    ChatServerAction::HandleRequest(request, i) => {
+                        match request{
+                            Request::login(content) => {},
+                            Request::logout(content) => {},
+                            Request::msg(content) => {},
+                            Request::names(content) => {},
+                            Request::help(content) => {},
+                        }
+                    },
+            }
+            chat_server.action = ChatServerAction::DoNothing;
         }
     }
 
@@ -94,6 +133,7 @@ impl ChatServer {
         // This is not necessarily necessary.
     }
 }
+
 
 struct ClientManager {
     tcp_listener: TcpListener,
@@ -123,17 +163,6 @@ impl ClientManager {
             }
         }).expect("Failed to start ClientManager");
         return new_stream_rx;
-    }
-}
-
-struct ClientHandler {}
-
-impl ClientHandler {
-    pub fn handle_client() {
-        loop {
-            //listen to tcp, channel       
-            //send to concerned
-        }
     }
 }
 
