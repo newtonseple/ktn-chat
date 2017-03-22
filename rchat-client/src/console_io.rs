@@ -3,10 +3,10 @@ use std::io;
 use std::io::BufRead;
 
 
-struct ConsoleReader;
+pub struct ConsoleReader;
 
 impl ConsoleReader {
-    fn run(console_input_tx: Sender<String>) {
+    pub fn run(console_input_tx: Sender<String>) {
         let stdin = io::stdin();
         for line in stdin.lock().lines() {
             let line = line.expect("Unable to read from stdin");
@@ -15,10 +15,10 @@ impl ConsoleReader {
     }
 }
 
-struct ConsolePrinter;
+pub struct ConsolePrinter;
 
 impl ConsolePrinter {
-    fn run(console_output_rx: Receiver<String>) {
+    pub fn run(console_output_rx: Receiver<String>) {
         loop {
             println!("{}", console_output_rx.recv().expect("Unable to receive anything to print"));
         }
