@@ -37,7 +37,7 @@ enum ChatServerAction {
 
 struct ChatServer {
     //States
-    message_log: Vec<String>,
+    message_log: Vec<Response>,
     clients: Vec<ClientInfo>,
     stream_rx: Receiver<TcpStream>,
     action: ChatServerAction,
@@ -125,28 +125,31 @@ impl ChatServer {
                         match request{
                             Request::login{content: Some(username)} => {
                                 if ChatServer::get_names(&(chat_server.clients)).contains(&username){
+                                    println!("client {} tried login as {}",i,username);
                                     let response = Response::error{timestamp, sender: "SERVER".to_string(), content: "Name taken".to_string()};
                                     chat_server.clients.get(i).unwrap().response_tx.send(response).expect("Send failed");
                                 } else {
-                                    println!("client {}  log in as {}",i,username);
+                                    println!("client {} logged in as {}",i,username);
                                     chat_server.clients.get_mut(i).unwrap().username = Some(username);
-                                    let response = Response::info{timestamp, sender: "SERVER".to_string(), content: "Logged in".to_string()};
+                                    let response = Response::info{timestamp: timestamp.clone(), sender: "SERVER".to_string(), content: "Logged in".to_string()};
+                                    chat_server.clients.get(i).unwrap().response_tx.send(response).expect("Send failed");
+                                    let response = Response::history{timestamp, sender: "SERVER".to_string(), content: chat_server.message_log.clone()};
                                     chat_server.clients.get(i).unwrap().response_tx.send(response).expect("Send failed");
                                 }
                                 
                             },
                             Request::logout{content: _} => {
-                                println!("client {} tried to logout",i);
+                                println!("client {} logout",i);
                                 chat_server.clients.get_mut(i).unwrap().username = None
                             },
                             Request::msg{content: Some(message)} => {
-                                println!("client {} tried to msg {}",i,message);
-                                
+                                println!("client {} msg {}",i,message);       
                                 if let Some(ref username) = chat_server.clients.get(i).unwrap().username{ //wtf
-                                    let response = Response::message{timestamp, sender: username.clone(), content: message};
+                                    let response = Response::message{timestamp, sender: username.clone(), content: message.clone()};
                                     for client in chat_server.clients.iter(){
                                         client.response_tx.send(response.clone()).expect("Could not send");
                                     }
+                                    chat_server.message_log.push(response);
                                 } else {
                                     let response = Response::error{timestamp, sender: "SERVER".to_string(), content: "Not logged in".to_string()};
                                     chat_server.clients.get(i).unwrap().response_tx.send(response).expect("Send failed");
@@ -154,8 +157,10 @@ impl ChatServer {
 
                             },
                             Request::names{content: _} => {
-                                println!("Unimplemented!! client {} tried to get names",i);
-
+                                println!("client {} tried to get names",i);
+                                let names = "Names: ".to_string() + &ChatServer::get_names(&(chat_server.clients)).join(", ");
+                                let response = Response::info{timestamp, sender: "SERVER".to_string(), content: names};
+                                chat_server.clients.get(i).unwrap().response_tx.send(response).expect("Send failed");
                             },
                             Request::help{content: _} => {
                                 println!("client {} tried to get help",i);
