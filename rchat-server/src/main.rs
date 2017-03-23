@@ -3,6 +3,7 @@
 
 extern crate rchat_common;
 extern crate regex;
+extern crate chrono;
 
 use std::thread;
 
@@ -103,7 +104,9 @@ impl ChatServer {
                                 },
                                 Err(e) => {
                                     println!("Request was not received. {:?}",e);
-                                    let timestamp = "TIMESTAMP".to_string();
+                                    //let timestamp = "TIMESTAMP".to_string();
+                                    let now = chrono::UTC::now();
+                                    let timestamp =  now.format("%Y-%m-%dT%H:%M:%SZ").to_string();
                                     let response = Response::error{timestamp, sender: "SERVER".to_string(), content: "Invalid packet format. Connection dropped.".to_string()};
                                     chat_server.clients.get(i).unwrap().response_tx.send(response).expect("Send failed");
                                     chat_server.action = ChatServerAction::RemoveClient(i);
@@ -124,7 +127,9 @@ impl ChatServer {
                         chat_server.clients.swap_remove(i);
                     },
                     ChatServerAction::HandleRequest(request, i) => {
-                        let timestamp = "TIMESTAMP".to_string();
+                        let now = chrono::UTC::now();
+                        let timestamp =  now.format("%Y-%m-%dT%H:%M:%SZ").to_string();
+                        //let timestamp = "TIMESTAMP".to_string();
                         match request{
                             Request::login{content: Some(username)} => {
                                 let re = Regex::new(r"^[a-zA-Z0-9]*$").unwrap();
@@ -143,7 +148,7 @@ impl ChatServer {
                             },
                             Request::logout{content: _} => {
                                 let mut logout = false;
-                                if let Some(ref username) = chat_server.clients.get(i).unwrap().username{ //wtf
+                                if let Some(_) = chat_server.clients.get(i).unwrap().username{ //wtf
                                     println!("client {} logout",i);
                                     logout = true;
                                 } else {

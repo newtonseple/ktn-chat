@@ -55,7 +55,7 @@ impl<R> TcpReciever<R> where R: Deserialize {
             if c == '{' { depth += 1;} 
             if c == '}' { depth -= 1;}
             if (depth == 0) && (depth_prev == 1) {
-                //println!("Common sender got {}",buffer.clone());
+                //println!("Common rcv got {}",buffer.clone());
                 let received: R = serde_json::from_str(buffer.as_str()).expect("Unable to deserialize");
                 self.tx.send(received).expect("Unable to send received object");
                 buffer.clear();
