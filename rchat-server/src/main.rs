@@ -2,6 +2,7 @@
 #![allow(dead_code)] // For developer sanity
 
 extern crate rchat_common;
+extern crate regex;
 
 use std::thread;
 
@@ -11,6 +12,8 @@ use std::sync::mpsc::channel;
 use std::sync::mpsc::Receiver;
 use std::sync::mpsc::Sender;
 use std::sync::mpsc::Select;
+
+use regex::Regex;
 
 use rchat_common::{Request, Response, TcpTransceive};
 
@@ -124,9 +127,10 @@ impl ChatServer {
                         let timestamp = "TIMESTAMP".to_string();
                         match request{
                             Request::login{content: Some(username)} => {
-                                if ChatServer::get_names(&(chat_server.clients)).contains(&username){
+                                let re = Regex::new(r"^[a-zA-Z0-9]*$").unwrap();
+                                if ChatServer::get_names(&(chat_server.clients)).contains(&username) || !re.is_match(username.as_str()){
                                     println!("client {} tried login as {}",i,username);
-                                    let response = Response::error{timestamp, sender: "SERVER".to_string(), content: "Name taken".to_string()};
+                                    let response = Response::error{timestamp, sender: "SERVER".to_string(), content: "Name taken or invalid".to_string()};
                                     chat_server.clients.get(i).unwrap().response_tx.send(response).expect("Send failed");
                                 } else {
                                     println!("client {} logged in as {}",i,username);
@@ -136,11 +140,21 @@ impl ChatServer {
                                     let response = Response::history{timestamp, sender: "SERVER".to_string(), content: chat_server.message_log.clone()};
                                     chat_server.clients.get(i).unwrap().response_tx.send(response).expect("Send failed");
                                 }
-                                
                             },
                             Request::logout{content: _} => {
-                                println!("client {} logout",i);
-                                chat_server.clients.get_mut(i).unwrap().username = None
+                                let mut logout = false;
+                                if let Some(ref username) = chat_server.clients.get(i).unwrap().username{ //wtf
+                                    println!("client {} logout",i);
+                                    logout = true;
+                                } else {
+                                    let response = Response::error{timestamp: timestamp.clone(), sender: "SERVER".to_string(), content: "Not logged in".to_string()};
+                                    chat_server.clients.get(i).unwrap().response_tx.send(response).expect("Send failed");
+                                }
+                                if logout{
+                                    chat_server.clients.get_mut(i).unwrap().username = None;
+                                    let response = Response::info{timestamp: timestamp.clone(), sender: "SERVER".to_string(), content: "Logged out".to_string()};
+                                    chat_server.clients.get(i).unwrap().response_tx.send(response).expect("Send failed");
+                                }
                             },
                             Request::msg{content: Some(message)} => {
                                 println!("client {} msg {}",i,message);       
@@ -158,9 +172,14 @@ impl ChatServer {
                             },
                             Request::names{content: _} => {
                                 println!("client {} tried to get names",i);
-                                let names = "Names: ".to_string() + &ChatServer::get_names(&(chat_server.clients)).join(", ");
-                                let response = Response::info{timestamp, sender: "SERVER".to_string(), content: names};
-                                chat_server.clients.get(i).unwrap().response_tx.send(response).expect("Send failed");
+                                if let Some(_) = chat_server.clients.get(i).unwrap().username{ //wtf
+                                    let names = "Names: ".to_string() + &ChatServer::get_names(&(chat_server.clients)).join(", ");
+                                    let response = Response::info{timestamp, sender: "SERVER".to_string(), content: names};
+                                    chat_server.clients.get(i).unwrap().response_tx.send(response).expect("Send failed");
+                                } else {
+                                    let response = Response::error{timestamp, sender: "SERVER".to_string(), content: "Not logged in".to_string()};
+                                    chat_server.clients.get(i).unwrap().response_tx.send(response).expect("Send failed");
+                                }
                             },
                             Request::help{content: _} => {
                                 println!("client {} tried to get help",i);

@@ -5,3 +5,4 @@ authors = ["Bernt Johan <newtonseple@gmail.com>"]
 
 [dependencies]
 rchat_common = {path = "../rchat-common"}
+regex = "0.2"
