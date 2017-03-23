@@ -45,7 +45,7 @@ impl<R> TcpReciever<R> where R: Deserialize {
         TcpReciever{stream, tx}
     }
 
-    pub fn run(mut self) -> ! {
+    pub fn run(self) -> ! {
         let mut buffer = String::new();
         let mut depth = 0;
         for c in self.stream.chars(){
@@ -55,7 +55,7 @@ impl<R> TcpReciever<R> where R: Deserialize {
             if c == '{' { depth += 1;} 
             if c == '}' { depth -= 1;}
             if (depth == 0) && (depth_prev == 1) {
-                println!("Common sender got {}",buffer.clone());
+                //println!("Common sender got {}",buffer.clone());
                 let received: R = serde_json::from_str(buffer.as_str()).expect("Unable to deserialize");
                 self.tx.send(received).expect("Unable to send received object");
                 buffer.clear();
@@ -91,7 +91,7 @@ impl<T> TcpSender<T> where T: Serialize {
              let to_send = self.rx.recv().expect("Unable to receive something to send");
              let to_send = serde_json::to_string(&to_send).expect("Unable to serialize");
              self.stream.write(to_send.as_bytes()).expect("Unable to send object");
-             println!("Common sender sent {}",to_send);
+             //println!("Common sender sent {}",to_send);
          }
      }
 }

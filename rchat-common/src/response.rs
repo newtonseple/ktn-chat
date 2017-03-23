@@ -48,7 +48,7 @@ impl Display for Response {
                     history.push_str(format!("{}", message).as_str());
                     history.push_str("\n");
                 }
-                write!(f, "[{}, {}] {}: {}", timestamp, sender, "History", history)
+                write!(f, "[{}, {}] {}:\n{}", timestamp, sender, "History", history)
             },
         }
     }
