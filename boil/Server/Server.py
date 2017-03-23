@@ -35,7 +35,8 @@ class ClientHandler(SocketServer.BaseRequestHandler):
         while self.active:
             received_string = self.connection.recv(4096)
             request = json.loads(received_string);
-            
+            print request;
+
             #Login request
             if request['request'] == 'login':
                if not self.check_username(request['content']):
@@ -153,7 +154,7 @@ if __name__ == "__main__":
 
     No alterations are necessary
     """
-    HOST, PORT = 'localhost', 9998
+    HOST, PORT = 'localhost', 9999
     print('Server running...')
 
     # Set up and initiate the TCP server
