@@ -61,7 +61,7 @@ pub trait TcpTransceive {
 ```
 
 ## Server
-The server is what contains most of (if not all) the logic. On startup it will create a `ChatServer` that creates a `ClientManager` which will listen for, and accept incoming connection requests. For every established connection a `ServerTcpTranceiver`, a unit struct that implements the `TcpTranceive` trait, will be made, and it will run in a separate thread. The `Clienthandler` will recieve requests from a `TcpStream`, parse them, and hand them to the `ChatServer` via a channel. Likwise the `ChatServer` will hand responses through a channel to the `ClientHandler`. When the `ChatServer` recieves a request it will perform the necessary actions. A request will be on the form
+The server is what contains most of (if not all) the logic. On startup it will create a `ChatServer` that creates a `ClientManager` which will listen for, and accept incoming connection requests. For every established connection a `ServerTcpTranceiver`, a unit struct that implements the `TcpTranceive` trait, will be made, and it will run in a separate thread. The `ChatServer` will recieve requests from a `ServerTcpTranceive`, parse them, and hand them to the `ChatServer` via a channel. Likwise the `ChatServer` will hand responses through a channel to the `ServerTcpTranceive`. When the `ChatServer` recieves a request it will perform the necessary actions.
 
 The only requests that is valid for a user that is not yet logged in is `login` and `help`. All other responses will be answered with an error response.
 
