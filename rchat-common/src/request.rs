@@ -16,17 +16,29 @@ impl FromStr for Request {
     type Err = ();
 
     fn from_str(s: &str) -> Result<Request, ()> {
-        let mut words = s.split_whitespace();
+        let mut words = s.splitn(2, ' ');
         let req = words.nth(0);
-        let con: String = words.skip(1).collect();
+        let con = words.map(|s| s.to_string()).nth(0);
         if let Some(request) = req {
             match request {
-                "login" => return Ok(Request::login { content: Some(con) }),
-                "logout" => return Ok(Request::login { content: Some(con) }),
-                "msg" => return Ok(Request::login { content: Some(con) }),
-                "names" => return Ok(Request::login { content: Some(con) }),
-                "help" => return Ok(Request::login { content: Some(con) }),
-                _ => return Err(()),
+                "login" => {
+                    return Ok(Request::login { content: con });
+                },
+                "logout" => {
+                    return Ok(Request::logout { content: con });
+                },
+                "msg" => {
+                    return Ok(Request::msg { content: con });
+                },
+                "names" => {
+                    return Ok(Request::names { content: con });
+                },
+                "help" => {
+                    return Ok(Request::help { content: con });
+                },
+                _ => {
+                    return Err(());
+                },
             };
         }
         Err(())
@@ -60,25 +72,11 @@ mod test {
     use super::*;
 
     #[test]
-    fn test1() {
-        let reqt1 = RequestType::login;
-        let reqt2 = RequestType::msg;
-        let reqt1j = serde_json::to_string(&reqt1).unwrap();
-        let reqt2j = serde_json::to_string(&reqt2).unwrap();
-        let reqt1d: RequestType = serde_json::from_str(&reqt1j).unwrap();
-        let reqt2d: RequestType = serde_json::from_str(&reqt2j).unwrap();
-        assert_eq!(reqt1, reqt1d);
-        assert_eq!(reqt2, reqt2d);
-    }
-
-    #[test]
     fn test2() {
-        let req1 = Request {
-            request: RequestType::msg,
+        let req1 = Request::msg{
             content: Some("hello".to_string()),
         };
-        let req2 = Request {
-            request: RequestType::help,
+        let req2 = Request::help {
             content: None,
         };
         let req1j = serde_json::to_string(&req1).unwrap();
@@ -87,5 +85,12 @@ mod test {
         let req2d: Request = serde_json::from_str(&req2j).unwrap();
         assert_eq!(req1, req1d);
         assert_eq!(req2, req2d);
+    }
+
+    #[test]
+    fn test3() {
+        let msg = "msg Hei på deg";
+        let req: Request = msg.parse().expect("parse failed");
+        assert_eq!(Request::msg{content: Some("Hei på deg".to_string())}, req);
     }
 }
