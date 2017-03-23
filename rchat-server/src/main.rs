@@ -20,6 +20,8 @@ fn main() {
     loop{}
 }
 
+//trait TestTrait {}
+
 struct ClientInfo {
     username: Option<String>,
     response_tx: Sender<Response>,
@@ -98,6 +100,9 @@ impl ChatServer {
                                 },
                                 Err(e) => {
                                     println!("Request was not received. {:?}",e);
+                                    let timestamp = "TIMESTAMP".to_string();
+                                    let response = Response::error{timestamp, sender: "SERVER".to_string(), content: "Invalid packet format. Connection dropped.".to_string()};
+                                    chat_server.clients.get(i).unwrap().response_tx.send(response).expect("Send failed");
                                     chat_server.action = ChatServerAction::RemoveClient(i);
                                 },
                             }
@@ -107,7 +112,7 @@ impl ChatServer {
             }
             match chat_server.action{
                     ChatServerAction::DoNothing => {
-                        unreachable!();
+                        //unreachable!();
                     },
                     ChatServerAction::AddClient(client) => {
                         chat_server.clients.push(client);
@@ -116,24 +121,51 @@ impl ChatServer {
                         chat_server.clients.swap_remove(i);
                     },
                     ChatServerAction::HandleRequest(request, i) => {
+                        let timestamp = "TIMESTAMP".to_string();
                         match request{
                             Request::login{content: Some(username)} => {
-                                println!("Unimplemented: client {} tried to log in as {}",i,username);
+                                if ChatServer::get_names(&(chat_server.clients)).contains(&username){
+                                    let response = Response::error{timestamp, sender: "SERVER".to_string(), content: "Name taken".to_string()};
+                                    chat_server.clients.get(i).unwrap().response_tx.send(response).expect("Send failed");
+                                } else {
+                                    println!("client {}  log in as {}",i,username);
+                                    chat_server.clients.get_mut(i).unwrap().username = Some(username);
+                                    let response = Response::info{timestamp, sender: "SERVER".to_string(), content: "Logged in".to_string()};
+                                    chat_server.clients.get(i).unwrap().response_tx.send(response).expect("Send failed");
+                                }
+                                
                             },
                             Request::logout{content: _} => {
-                                println!("Unimplemented: client {} tried to logout",i);
+                                println!("client {} tried to logout",i);
+                                chat_server.clients.get_mut(i).unwrap().username = None
                             },
                             Request::msg{content: Some(message)} => {
-                                println!("Unimplemented: client {} tried to msg {}",i,message);
+                                println!("client {} tried to msg {}",i,message);
+                                
+                                if let Some(ref username) = chat_server.clients.get(i).unwrap().username{ //wtf
+                                    let response = Response::message{timestamp, sender: username.clone(), content: message};
+                                    for client in chat_server.clients.iter(){
+                                        client.response_tx.send(response.clone()).expect("Could not send");
+                                    }
+                                } else {
+                                    let response = Response::error{timestamp, sender: "SERVER".to_string(), content: "Not logged in".to_string()};
+                                    chat_server.clients.get(i).unwrap().response_tx.send(response).expect("Send failed");
+                                }
+
                             },
                             Request::names{content: _} => {
-                                println!("Unimplemented: client {} tried to get names",i);
+                                println!("Unimplemented!! client {} tried to get names",i);
+
                             },
                             Request::help{content: _} => {
-                                println!("Unimplemented: client {} tried to get help",i);
+                                println!("client {} tried to get help",i);
+                                let response = Response::info{timestamp, sender: "SERVER".to_string(), content: "Valid requests: login <username>, logout, msg <message>, names, help".to_string()};
+                                chat_server.clients.get(i).unwrap().response_tx.send(response).expect("Send failed");
                             },
                             _ => {
-                                println!("Unimplemented: I don't know what client {} tried",i);
+                                println!("I don't know what client {} tried",i);
+                                let response = Response::error{timestamp, sender: "SERVER".to_string(), content: "Invalid request".to_string()};
+                                chat_server.clients.get(i).unwrap().response_tx.send(response).expect("Send failed");
                             }
                         }
                     },
@@ -142,8 +174,15 @@ impl ChatServer {
         }
     }
 
-    fn helpern() {
+    fn get_names(clients: &Vec<ClientInfo>) -> Vec<String> {
         // This is not necessarily necessary.
+        let mut names = Vec::new();
+            for ref client in clients.iter(){
+                if let Some(ref username) = client.username {
+                    names.push(username.clone());
+                }
+            }
+        names
     }
 }
 
