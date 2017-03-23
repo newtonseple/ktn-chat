@@ -1,14 +1,36 @@
-use std::fmt::{Display, Formatter, Result};
+use std::fmt::{Display, Formatter};
+use std::str::FromStr;
 
 #[allow(non_camel_case_types)]
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 #[serde(tag = "request")]
 pub enum Request {
-    login {content: Option<String>},
-    logout {content: Option<String>},
-    msg {content: Option<String>},
-    names {content: Option<String>},
-    help {content: Option<String>},
+    login { content: Option<String> },
+    logout { content: Option<String> },
+    msg { content: Option<String> },
+    names { content: Option<String> },
+    help { content: Option<String> },
+}
+
+impl FromStr for Request {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Request, ()> {
+        let mut words = s.split_whitespace();
+        let req = words.nth(0);
+        let con: String = words.skip(1).collect();
+        if let Some(request) = req {
+            match request {
+                "login" => return Ok(Request::login { content: Some(con) }),
+                "logout" => return Ok(Request::login { content: Some(con) }),
+                "msg" => return Ok(Request::login { content: Some(con) }),
+                "names" => return Ok(Request::login { content: Some(con) }),
+                "help" => return Ok(Request::login { content: Some(con) }),
+                _ => return Err(()),
+            };
+        }
+        Err(())
+    }
 }
 
 /*
@@ -31,7 +53,8 @@ pub struct Request {
     pub content: Option<String>,
 }
 */
-#[cfg(test)]mod test {
+#[cfg(test)]
+mod test {
     extern crate serde_json;
 
     use super::*;
@@ -50,13 +73,19 @@ pub struct Request {
 
     #[test]
     fn test2() {
-        let req1 = Request{request: RequestType::msg, content: Some("hello".to_string())};
-        let req2 = Request{request: RequestType::help, content: None};
+        let req1 = Request {
+            request: RequestType::msg,
+            content: Some("hello".to_string()),
+        };
+        let req2 = Request {
+            request: RequestType::help,
+            content: None,
+        };
         let req1j = serde_json::to_string(&req1).unwrap();
         let req2j = serde_json::to_string(&req2).unwrap();
         let req1d: Request = serde_json::from_str(&req1j).unwrap();
         let req2d: Request = serde_json::from_str(&req2j).unwrap();
         assert_eq!(req1, req1d);
-        assert_eq!(req2, req2d); 
-    } 
+        assert_eq!(req2, req2d);
+    }
 }
