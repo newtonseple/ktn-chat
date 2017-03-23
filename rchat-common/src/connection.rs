@@ -45,7 +45,7 @@ impl<R> TcpReciever<R> where R: Deserialize {
         TcpReciever{stream, tx}
     }
 
-    pub fn run(mut self) -> ! {
+    pub fn run(self) -> ! {
         let mut buffer = String::new();
         let mut depth = 0;
         for c in self.stream.chars(){
