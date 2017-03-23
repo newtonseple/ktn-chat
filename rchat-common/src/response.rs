@@ -34,11 +34,22 @@ impl Display for Response {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         match self {
             &Response::error { ref timestamp, ref sender, ref content } => {
-                write!(f, "[{}, {}] {}: {}", timestamp, sender, "error", content)
-            }
-            &Response::info { ref timestamp, ref sender, ref content } => unimplemented!(),
-            &Response::message { ref timestamp, ref sender, ref content } => unimplemented!(),
-            &Response::history { ref timestamp, ref sender, ref content } => unimplemented!(),
+                write!(f, "[{}, {}] {}: {}", timestamp, sender, "Error", content)
+            },
+            &Response::info { ref timestamp, ref sender, ref content } => {
+                write!(f, "[{}, {}] {}: {}", timestamp, sender, "Info", content)
+            },
+            &Response::message { ref timestamp, ref sender, ref content } => {
+                write!(f, "[{}, {}] {}: {}", timestamp, sender, "Message", content)
+            },
+            &Response::history { ref timestamp, ref sender, ref content } => {
+                let mut history = String::new();
+                for message in content {
+                    history.push_str(format!("{}", message).as_str());
+                    history.push_str("\n");
+                }
+                write!(f, "[{}, {}] {}: {}", timestamp, sender, "History", history)
+            },
         }
     }
 }
